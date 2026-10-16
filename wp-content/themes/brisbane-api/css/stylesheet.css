@@ -1,0 +1,65 @@
+/* ==========================================================================
+   THEMES/BRISBANE-API/CSS/STYLESHEET.CSS
+   Loaded last in the cascade — overrides without !important.
+
+   1. Hero — animated light-sweep
+   ========================================================================== */
+
+/* --- Container setup -------------------------------------------------- */
+
+.hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.hero .hero-row {
+    position: relative;
+    z-index: 2;
+}
+
+/* --- The sweep band (injected by js/animation.js) --------------------- */
+
+.hero-sweep-band {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.00) 0%,
+        rgba(255, 255, 255, 0.10) 25%,
+        rgba(255, 255, 255, 0.45) 50%,
+        rgba(255, 255, 255, 0.10) 75%,
+        rgba(255, 255, 255, 0.00) 100%
+    );
+
+    filter: blur(10px);
+    will-change: transform;
+
+    transform: translateX(-100%);
+    animation: heroSweepBackForth 20s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+}
+
+/* --- Timeline --------------------------------------------------------- */
+
+@keyframes heroSweepBackForth {
+    0%    { transform: translateX(-100%); }
+    22.5% { transform: translateX(-100%); }
+    42.5% { transform: translateX(250%); }
+    65%   { transform: translateX(250%); }
+    85%   { transform: translateX(-100%); }
+    100%  { transform: translateX(-100%); }
+}
+
+/* --- Reduced motion --------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-sweep-band {
+        animation: none;
+        transform: translateX(-100%);
+    }
+}
