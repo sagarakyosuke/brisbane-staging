@@ -19,23 +19,121 @@
  */
 
 // ** Database settings - You can get this info from your web host ** //
+/**
+ * Environment-aware DB config.
+ *
+ * Environment is detected from HTTP_HOST (or falls back to `live` under CLI).
+ * Local hosts → local credentials.
+ * Staging hosts → staging credentials.
+ * Everything else → live credentials.
+ *
+ * To add a new environment:
+ *   1. Add its hostname(s) to the appropriate host list.
+ *   2. Add an entry to the $brisbane_databases map.
+ *   3. Add a branch in the detection block if it isn't local or staging.
+ */
+
+// ---- Host detection ----
+
+$brisbane_host = '';
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    // Under WP-CLI there's no HTTP_HOST — leave blank so it falls through to live.
+    $brisbane_host = '';
+} elseif ( ! empty( $_SERVER['HTTP_HOST'] ) ) {
+    $brisbane_host = $_SERVER['HTTP_HOST'];
+}
+
+$brisbane_host = strtolower( preg_replace( '/:\d+$/', '', (string) $brisbane_host ) ); // strip :port
+
+// ---- Host aliases ----
+
+$brisbane_local_hosts = [
+    'localhost',
+    '127.0.0.1',
+    '::1',
+    'brisbane-logistics.test',
+    'brisbane-logistics.local',
+];
+
+$brisbane_staging_hosts = [
+    'staging.brisbanelogistics.com.au',
+];
+
+// ---- Pick environment ----
+
+if ( in_array( $brisbane_host, $brisbane_local_hosts, true ) ) {
+    $brisbane_env = 'local';
+} elseif ( in_array( $brisbane_host, $brisbane_staging_hosts, true ) ) {
+    $brisbane_env = 'staging';
+} else {
+    $brisbane_env = 'live';
+}
+
+// ---- Credentials per environment ----
+
+$brisbane_databases = [
+    'local' => [
+        'name'     => 'wp_main_db',
+        'user'     => 'root',
+        'password' => '',
+        'host'     => 'localhost',
+        'charset'  => 'utf8mb4',
+        'collate'  => '',
+    ],
+    'staging' => [
+        'name'     => 'brisbane_wp',
+        'user'     => 'brisbane_user',
+        'password' => 'Lt#6.9XiKGaHko=O',
+        'host'     => 'localhost',
+        'charset'  => 'utf8mb4',
+        'collate'  => '',
+    ],
+    // 'live' => [
+    //     'name'     => 'brisbane_wp',
+    //     'user'     => 'brisbane_user',
+    //     'password' => 'Lt#6.9XiKGaHko=O',
+    //     'host'     => 'localhost',
+    //     'charset'  => 'utf8mb4',
+    //     'collate'  => '',
+    // ],
+];
+
+// ---- Safety net — fall back to staging until 'live' is defined ----
+
+if ( ! isset( $brisbane_databases[ $brisbane_env ] ) ) {
+    $brisbane_env = 'staging';
+}
+
+$brisbane_db = $brisbane_databases[ $brisbane_env ];
+
 /** The name of the database for WordPress */
-define( 'DB_NAME', 'brisbane_wp' );
+define( 'DB_NAME', $brisbane_db['name'] );
 
 /** Database username */
-define( 'DB_USER', 'brisbane_user' );
+define( 'DB_USER', $brisbane_db['user'] );
 
 /** Database password */
-define( 'DB_PASSWORD', 'Lt#6.9XiKGaHko=O' );
+define( 'DB_PASSWORD', $brisbane_db['password'] );
 
 /** Database hostname */
-define( 'DB_HOST', 'localhost' );
+define( 'DB_HOST', $brisbane_db['host'] );
 
 /** Database charset to use in creating database tables. */
-define( 'DB_CHARSET', 'utf8mb4' );
+define( 'DB_CHARSET', $brisbane_db['charset'] );
 
 /** The database collate type. Don't change this if in doubt. */
-define( 'DB_COLLATE', '' );
+define( 'DB_COLLATE', $brisbane_db['collate'] );
+
+// Clean up the helper variables so they don't linger in global scope.
+unset(
+    $brisbane_host,
+    $brisbane_local_hosts,
+    $brisbane_staging_hosts,
+    $brisbane_env,
+    $brisbane_databases,
+    $brisbane_db
+);
 
 /**#@+
  * Authentication unique keys and salts.
